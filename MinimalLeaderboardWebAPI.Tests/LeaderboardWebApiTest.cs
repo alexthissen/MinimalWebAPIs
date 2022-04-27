@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MinimalLeaderboardWebAPI.Infrastructure;
@@ -15,7 +17,22 @@ namespace MinimalLeaderboardWebAPI.Tests
         [TestMethod]
         public async Task GetReturnsList()
         {
-            await using var application = new LeaderboardApplication();
+            await using var application = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    var root = new InMemoryDatabaseRoot();
+                    services.AddScoped(provider =>
+                    {
+                        // Replace SQL Server with in-memory provider
+                        return new DbContextOptionsBuilder<LeaderboardContext>()
+                        .UseInMemoryDatabase("HighScores", root)
+                        .UseApplicationServiceProvider(provider)
+                        .Options;
+                    });
+                });
+            });
 
             // Create direct in-memory HTTP client
             HttpClient client = application.CreateClient(new WebApplicationFactoryClientOptions() { });

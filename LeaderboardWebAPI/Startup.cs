@@ -35,14 +35,14 @@ namespace LeaderboardWebAPI
             services.AddDbContext<LeaderboardContext>(options =>
             {
                 string connectionString = Configuration.GetConnectionString("LeaderboardContext");
-                //options.UseSqlServer(connectionString, sqlOptions =>
-                //{
-                //    sqlOptions.EnableRetryOnFailure(
-                //    maxRetryCount: 5,
-                //    maxRetryDelay: TimeSpan.FromSeconds(30),
-                //    errorNumbersToAdd: null);
-                //});
-                options.UseInMemoryDatabase(databaseName: "HighScores");
+                options.UseSqlServer(connectionString, sqlOptions =>
+                {
+                    sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null);
+                });
+                //options.UseInMemoryDatabase(databaseName: "HighScores");
             });
             services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -81,7 +81,7 @@ namespace LeaderboardWebAPI
         {
             if (env.IsDevelopment())
             {
-                //DbInitializer.Initialize(context).Wait();
+                //DbInitializer.Initialize(context).Wait(); // Old style initializing and seeding
                 context.Database.EnsureCreated();
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();

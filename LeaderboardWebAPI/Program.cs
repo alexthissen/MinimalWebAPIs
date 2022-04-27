@@ -17,7 +17,6 @@ namespace LeaderboardWebAPI
         {
             CreateHostBuilder(args)
                 .Build()
-                //.MigrateDatabase()
                 .Run();
         }
 

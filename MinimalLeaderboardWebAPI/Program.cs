@@ -7,7 +7,14 @@ using MinimalLeaderboardWebAPI.Infrastructure;
 using MinimalLeaderboardWebAPI.Models;
 using System.Text.Json.Serialization;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(
+    new WebApplicationOptions()
+    {
+        Args = args,
+        EnvironmentName = Environments.Development,
+        ContentRootPath = Directory.GetCurrentDirectory(),
+        WebRootPath = "webroot" 
+    });
 
 builder.Services.ConfigureRouteHandlerJsonOptions(options =>
 {
@@ -27,25 +34,25 @@ builder.Services.AddHealthChecks();
 
 // Add application insights
 builder.Services.AddSingleton<ITelemetryInitializer, ServiceNameInitializer>();
+builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
 builder.Logging.AddApplicationInsights(options =>
 {
     options.IncludeScopes = true;
     options.TrackExceptionsAsExceptionTelemetry = true;
 });
-builder.Services.AddApplicationInsightsTelemetry(builder.Configuration);
 
 // Entity Framework
 builder.Services.AddDbContext<LeaderboardContext>(options =>
 {
     string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
-    //options.UseSqlServer(connectionString, sqlOptions =>
-    //{
-    //    sqlOptions.EnableRetryOnFailure(
-    //    maxRetryCount: 5,
-    //    maxRetryDelay: TimeSpan.FromSeconds(30),
-    //    errorNumbersToAdd: null);
-    //});
-    options.UseInMemoryDatabase(databaseName: "HighScores");
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+        maxRetryCount: 5,
+        maxRetryDelay: TimeSpan.FromSeconds(30),
+        errorNumbersToAdd: null);
+    });
+    //options.UseInMemoryDatabase(databaseName: "HighScores");
 });
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -141,4 +148,6 @@ public record struct HighScore
     public int Points { get; set; }
 }
 
+// Add line below to make Program class public for testing
+// Or use [assembly:InternalsVisibleTo("")]
 //public partial class Program { } 
