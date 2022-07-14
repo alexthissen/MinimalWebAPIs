@@ -1,5 +1,9 @@
+// docker run -e ACCEPT_EULA=Y -e MSSQL_PID=Developer -e SA_PASSWORD="Pass@word" --name sqldocker -p 5433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+
 using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MinimalLeaderboardWebAPI;
@@ -74,14 +78,14 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapPost("/api/scores/{nickname}/{game}",
-    [EndpointSummary("")] async (string nickname, string game, [FromBody] int points, LeaderboardContext context) =>
+    [EndpointSummary("")] async Task<Results<Ok, NoContent, BadRequest>> (string nickname, string game, [FromBody] int points, LeaderboardContext context) =>
 {
     // Lookup gamer based on nickname
     Gamer gamer = await context.Gamers
           .FirstOrDefaultAsync(g => g.Nickname.ToLower() == nickname.ToLower())
           .ConfigureAwait(false);
 
-    if (gamer == null) return Results.BadRequest();
+    if (gamer == null) return TypedResults.BadRequest();
 
     // Find highest score for game
     var score = await context.Scores
@@ -97,12 +101,18 @@ app.MapPost("/api/scores/{nickname}/{game}",
     }
     else
     {
-        if (score.Points > points) return Results.NoContent();
+        if (score.Points > points) return TypedResults.NoContent();
         score.Points = points;
     }
     await context.SaveChangesAsync().ConfigureAwait(false);
-    return Results.Ok();
+    return TypedResults.Ok();
 })
+    //.WithOpenApi(operation => {
+    //    operation.Summary = "Upload potential new high scores";
+    //    operation.Parameters[0].AllowEmptyValue = false;
+    //    operation.OperationId = "PostHighScoreId";
+    //    return operation;
+    //})
     .WithDescription("Upload potential new high scores")
     .WithName("PostHighScore")
     .Accepts<int>("application/json", "application/xml"); // Limited support for XML

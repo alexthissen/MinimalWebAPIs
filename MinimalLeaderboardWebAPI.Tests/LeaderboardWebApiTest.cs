@@ -1,10 +1,9 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MinimalLeaderboardWebAPI.Infrastructure;
 using MinimalLeaderboardWebAPI.Models;
 using System.Net.Http.Json;
@@ -27,9 +26,9 @@ namespace MinimalLeaderboardWebAPI.Tests
                     {
                         // Replace SQL Server with in-memory provider
                         return new DbContextOptionsBuilder<LeaderboardContext>()
-                        .UseInMemoryDatabase("HighScores", root)
-                        .UseApplicationServiceProvider(provider)
-                        .Options;
+                            .UseInMemoryDatabase("HighScores", root)
+                            .UseApplicationServiceProvider(provider)
+                            .Options;
                     });
                 });
             });
@@ -62,8 +61,8 @@ namespace MinimalLeaderboardWebAPI.Tests
             var result = await LeaderboardExtensions.GetScores(context, null, 10);
 
             // Assert
-            Assert.IsInstanceOfType(result, typeof(OkObjectHttpResult));
-            var httpResult = (OkObjectHttpResult)result;
+            Assert.IsInstanceOfType(result, typeof(Ok<List<HighScore>>));
+            var httpResult = (Ok<List<HighScore>>)result;
             Assert.AreEqual(StatusCodes.Status200OK, httpResult.StatusCode);
             Assert.IsNotNull(httpResult.Value);
         }

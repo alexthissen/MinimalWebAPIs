@@ -31,7 +31,7 @@ namespace MinimalLeaderboardWebAPI
                     Nickname = score.Gamer.Nickname
                 }).Take(limit);
 
-            return Results.Ok(await scores.ToListAsync().ConfigureAwait(false));
+            return TypedResults.Ok(await scores.ToListAsync().ConfigureAwait(false));
         }
     }
 }
