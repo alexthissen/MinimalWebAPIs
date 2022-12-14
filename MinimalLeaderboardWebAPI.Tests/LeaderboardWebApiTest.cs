@@ -39,7 +39,7 @@ namespace MinimalLeaderboardWebAPI.Tests
 
             // Assert
             Assert.IsNotNull(response);
-            Assert.AreEqual(2, response.Count());
+            Assert.AreEqual(2, response?.Count());
         }
 
         [TestMethod]

@@ -2,7 +2,7 @@
 using Microsoft.ApplicationInsights.Extensibility;
 using System;
 
-namespace MinimalLeaderboardWebAPI
+namespace MinimalLeaderboardWebAPI.Infrastructure
 {
     public class ServiceNameInitializer : ITelemetryInitializer
     {

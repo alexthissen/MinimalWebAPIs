@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using MinimalLeaderboardWebAPI;
 using MinimalLeaderboardWebAPI.Infrastructure;
 using MinimalLeaderboardWebAPI.Models;
 using System.Text.Json.Serialization;
@@ -20,7 +19,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(
         WebRootPath = "webroot" 
     });
 
-builder.Services.ConfigureRouteHandlerJsonOptions(options =>
+builder.Services.ConfigureHttpJsonOptions(options =>
 {
     //Ignore Cycles
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
@@ -78,7 +77,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapPost("/api/scores/{nickname}/{game}",
-    [EndpointSummary("")] async Task<Results<Ok, NoContent, BadRequest>> (string nickname, string game, [FromBody] int points, LeaderboardContext context) =>
+    [EndpointSummary("")] async Task<Results<Ok, NoContent, BadRequest>> (
+        string nickname, string game, 
+        [FromBody] int points, 
+        LeaderboardContext context) =>
 {
     // Lookup gamer based on nickname
     Gamer gamer = await context.Gamers
@@ -153,9 +155,9 @@ app.Run();
 
 public record struct HighScore
 {
-    public string Game { get; set; }
-    public string Nickname { get; set; }
-    public int Points { get; set; }
+    public string Game { get; init; }
+    public string Nickname { get; init; }
+    public int Points { get; init; }
 }
 
 // Add line below to make Program class public for testing
