@@ -1,0 +1,17 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+
+@LeaderboardWebAPI_HostAddress = https://localhost:7239
+@Gamer = LX360
+
+GET {{LeaderboardWebAPI_HostAddress}}/api/leaderboard
+Accept: application/json
+
+###
+
+POST {{LeaderboardWebAPI_HostAddress}}/api/scores/{{Gamer}}/Space%20Invaders
+Accept: application/json
+Content-Type: application/json
+
+123457
+
+###

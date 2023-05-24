@@ -30,7 +30,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "LeaderboardWebAPI", Version = "v1" });
+    c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "LeaderboardWebAPI", Version = "v1" });
 });
 
 builder.Services.AddHealthChecks();
@@ -47,15 +47,15 @@ builder.Logging.AddApplicationInsights(options =>
 // Entity Framework
 builder.Services.AddDbContext<LeaderboardContext>(options =>
 {
-    string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.EnableRetryOnFailure(
-        maxRetryCount: 5,
-        maxRetryDelay: TimeSpan.FromSeconds(30),
-        errorNumbersToAdd: null);
-    });
-    //options.UseInMemoryDatabase(databaseName: "HighScores");
+    //string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
+    //options.UseSqlServer(connectionString, sqlOptions =>
+    //{
+    //    sqlOptions.EnableRetryOnFailure(
+    //    maxRetryCount: 5,
+    //    maxRetryDelay: TimeSpan.FromSeconds(30),
+    //    errorNumbersToAdd: null);
+    //});
+    options.UseInMemoryDatabase(databaseName: "HighScores");
 });
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -70,8 +70,13 @@ if (app.Environment.IsDevelopment())
         scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
     }
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LeaderboardWebAPI v1"));
+    app.UseSwagger(options => {
+        options.RouteTemplate = "openapi/{documentName}/openapi.json";
+    });
+    app.UseSwaggerUI(c => {
+        c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
+        c.RoutePrefix = "openapi";
+    });
 }
 
 app.UseHttpsRedirection();
@@ -120,7 +125,7 @@ app.MapPost("/api/scores/{nickname}/{game}",
     .Accepts<int>("application/json", "application/xml"); // Limited support for XML
 
 app.MapGet("/api/leaderboard", GetScores)
-    .WithDescription("Gets all highscores")
+    .WithDescription("Gets all high scores")
     .WithName("GetScores")
     .Produces<IEnumerable<HighScore>>(StatusCodes.Status200OK)
     .Produces<IEnumerable<HighScore>>(StatusCodes.Status204NoContent)
