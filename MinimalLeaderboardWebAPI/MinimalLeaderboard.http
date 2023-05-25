@@ -11,7 +11,28 @@ Accept: application/json
 POST {{LeaderboardWebAPI_HostAddress}}/api/scores/{{Gamer}}/Space%20Invaders
 Accept: application/json
 Content-Type: application/json
+Authorization: Bearer CfDJ8Nenssxc6WlMt2ObI2hdMko6GEAzUeTNNFej2BNwBHaxoXjSMnYC9dAkDTM2b0mVkfSpeE2I1bgKtqs9yGDgHbyTa5wYLOJQ27y5f1vwV55lXe29PAY_fREnP6LxXhhzcg8XishhV4xh4uhoKHPMn90u7inuLfV2vvRiiUC0-Xp2KohUhYw5NO5qXZq8WO6rfgKadqHvFw4wRqxInYo4jb9p8c-3qxRLXK-fPHmrODe27Y7u9ZbDnbMF_9d0gzkkwouFR5MfTRLyxp3oQx0BhA89BfbNl5pyS6TxhqCxdqx0TwQXtuw0GWgFgDDakt0YlAlC9Vw9-oJHJfQRr-yyicNH0YdjjTYK6WlIENHSASA1OgL61qKYiayN_8rmy5kxVPENdM7epliZ93crvCzZxpY_0cNBN7Turmt53TyLm1kJ6lpYV3h0fqV3p5a_NnjvLDcRvuQtcsofHbINdVJveZCK1m6MNxh8tF5Rpn3KXduxXTYQ6MzGHVqSYlOOpZ2PV2sJkejmSuXvdLqn18km-mE
 
-123457
+123456
 
 ###
+POST {{LeaderboardWebAPI_HostAddress}}/identity/register
+Accept: application/json
+Content-Type: application/json
+
+{ "username": "LX360", "password": "Abc123!@" }
+
+###
+
+POST {{LeaderboardWebAPI_HostAddress}}/identity/login
+Accept: application/json
+Content-Type: application/json
+
+{ "username": "LX360", "password": "Abc123!@" }
+
+###
+
+GET {{LeaderboardWebAPI_HostAddress}}/requires-auth
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IkxYMzYwIiwic3ViIjoiTFgzNjAiLCJqdGkiOiJjZjljNTMwZSIsInNjb3BlIjoiaGlnaHNjb3JlX2FwaSIsInJvbGUiOiJwbGF5ZXIiLCJhdWQiOlsiaHR0cDovL2xvY2FsaG9zdDo1MjQxOSIsImh0dHBzOi8vbG9jYWxob3N0OjQ0Mzc4IiwiaHR0cHM6Ly9sb2NhbGhvc3Q6NzIzOSIsImh0dHA6Ly9sb2NhbGhvc3Q6NTIzOSJdLCJuYmYiOjE2ODUwMjg1MTUsImV4cCI6MTY5Mjk3NzMxNSwiaWF0IjoxNjg1MDI4NTE3LCJpc3MiOiJkb3RuZXQtdXNlci1qd3RzIn0.ErKdkPopmsQI55Qj4PJmDtsXsq4u0goE7a5_mYXqHXo

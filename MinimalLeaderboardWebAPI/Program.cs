@@ -1,13 +1,15 @@
 // docker run -e ACCEPT_EULA=Y -e MSSQL_PID=Developer -e SA_PASSWORD="Pass@word" --name sqldocker -p 5433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+// dotnet user-jwts create --scope "highscore_api" --role "player" --name "LX360"
 
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using MinimalLeaderboardWebAPI.Infrastructure;
 using MinimalLeaderboardWebAPI.Models;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(
@@ -21,12 +23,11 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    //Ignore Cycles
+    //Ignore cycles
     options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
 // Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -47,17 +48,26 @@ builder.Logging.AddApplicationInsights(options =>
 // Entity Framework
 builder.Services.AddDbContext<LeaderboardContext>(options =>
 {
-    //string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
-    //options.UseSqlServer(connectionString, sqlOptions =>
-    //{
-    //    sqlOptions.EnableRetryOnFailure(
-    //    maxRetryCount: 5,
-    //    maxRetryDelay: TimeSpan.FromSeconds(30),
-    //    errorNumbersToAdd: null);
-    //});
-    options.UseInMemoryDatabase(databaseName: "HighScores");
+    string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+        maxRetryCount: 5,
+        maxRetryDelay: TimeSpan.FromSeconds(30),
+        errorNumbersToAdd: null);
+    });
+    //    options.UseInMemoryDatabase(databaseName: "HighScores");
 });
+
+//builder.Services.AddDbContext<LeaderboardContext>(
+//    options => options.UseInMemoryDatabase(databaseName: "HighScores"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// Add authentication and authorization
+builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthorization();
+builder.Services.AddIdentityApiEndpoints<IdentityUser>()
+    .AddEntityFrameworkStores<LeaderboardContext>();
 
 WebApplication app = builder.Build();
 
@@ -70,21 +80,28 @@ if (app.Environment.IsDevelopment())
         scope.ServiceProvider.GetRequiredService<LeaderboardContext>().Database.EnsureCreated();
     }
     app.UseDeveloperExceptionPage();
-    app.UseSwagger(options => {
-        options.RouteTemplate = "openapi/{documentName}/openapi.json";
-    });
-    app.UseSwaggerUI(c => {
-        c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
-        c.RoutePrefix = "openapi";
-    });
 }
+
+app.UseSwagger(options => {
+    options.RouteTemplate = "openapi/{documentName}/openapi.json";
+});
+app.UseSwaggerUI(c => {
+    c.SwaggerEndpoint("/openapi/v1.0/openapi.json", "LeaderboardWebAPI v1.0");
+    c.RoutePrefix = "openapi";
+});
+
+app.MapGroup("/identity").MapIdentityApi<IdentityUser>();
+app.MapHealthChecks("/health").WithDescription("Health check");
 
 app.UseHttpsRedirection();
 
-app.MapPost("/api/scores/{nickname}/{game}",
-    [EndpointSummary("")] async Task<Results<Ok, NoContent, BadRequest>> (
+RouteGroupBuilder group = app.MapGroup("/api");
+
+group.MapPost("/scores/{nickname}/{game}",
+    [EndpointSummary("Post new high score")] 
+    async Task<Results<Ok, NoContent, BadRequest, UnauthorizedHttpResult>> (
         string nickname, string game, 
-        [FromBody] int points, 
+        [FromBody] int points, ClaimsPrincipal user,
         LeaderboardContext context) =>
 {
     // Lookup gamer based on nickname
@@ -93,6 +110,7 @@ app.MapPost("/api/scores/{nickname}/{game}",
           .ConfigureAwait(false);
 
     if (gamer == null) return TypedResults.BadRequest();
+    if (user.Identity?.Name != gamer.Nickname) return TypedResults.Unauthorized();
 
     // Find highest score for game
     var score = await context.Scores
@@ -122,9 +140,10 @@ app.MapPost("/api/scores/{nickname}/{game}",
     //})
     .WithDescription("Upload potential new high scores")
     .WithName("PostHighScore")
+    .RequireAuthorization()
     .Accepts<int>("application/json", "application/xml"); // Limited support for XML
 
-app.MapGet("/api/leaderboard", GetScores)
+group.MapGet("/leaderboard", GetScores)
     .WithDescription("Gets all high scores")
     .WithName("GetScores")
     .Produces<IEnumerable<HighScore>>(StatusCodes.Status200OK)
@@ -158,12 +177,7 @@ app.MapPost("/upload", async (IFormFile file) =>
 app.Logger.LogInformation("Logging before run");
 app.Run();
 
-public record struct HighScore
-{
-    public string Game { get; init; }
-    public string Nickname { get; init; }
-    public int Points { get; init; }
-}
+public record struct HighScore(string Game, string Nickname, int Points);
 
 // Add line below to make Program class public for testing
 // Or use [assembly:InternalsVisibleTo("")]

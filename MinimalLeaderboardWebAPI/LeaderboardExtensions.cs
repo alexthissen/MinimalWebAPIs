@@ -11,7 +11,7 @@ namespace MinimalLeaderboardWebAPI
         public static void MapLeaderboard(this IEndpointRouteBuilder app)
         {
             app.MapGet("/api/leaderboard", GetScores)
-                .WithDescription("Gets all highscores")
+                .WithDescription("Gets all high scores")
                 .WithName("GetScores")
                 .Produces<IEnumerable<HighScore>>(StatusCodes.Status200OK)
                 .Produces<IEnumerable<HighScore>>(StatusCodes.Status204NoContent)

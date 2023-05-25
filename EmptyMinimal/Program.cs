@@ -1,32 +1,17 @@
-var builder = WebApplication.CreateBuilder(args);
+using EmptyMinimalWebAPI;
 
-// Add services to the container.
+var builder = WebApplication.CreateSlimBuilder(args);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+var sampleTodos = TodoGenerator.GenerateTodos().ToArray();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateTime.Now.AddDays(index),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-});
+var todosApi = app.MapGroup("/todos");
+todosApi.MapGet("/", () => sampleTodos);
+todosApi.MapGet("/{id}", (int id) =>
+    sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
+        ? Results.Ok(todo)
+        : Results.NotFound());
 
 app.Run();
 
-internal record WeatherForecast(DateTime Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
