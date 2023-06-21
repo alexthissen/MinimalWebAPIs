@@ -29,9 +29,37 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(setup =>
 {
-    c.SwaggerDoc("v1.0", new OpenApiInfo { Title = "LeaderboardWebAPI", Version = "v1" });
+    setup.SwaggerDoc("v1.0", new OpenApiInfo { Title = "LeaderboardWebAPI", Version = "v1" });
+
+    OpenApiSecurityScheme securityDefinition = new OpenApiSecurityScheme()
+            {
+                Name = "Bearer",
+                BearerFormat = "JWT",
+                Scheme = "bearer",
+                Description = "Specify the authorization token.",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+            };
+        OpenApiSecurityRequirement securityRequirements = new OpenApiSecurityRequirement()
+            {
+                { securityDefinition, new string[] { }},
+            };
+    setup.AddSecurityDefinition("Bearer", securityDefinition);
+
+    // setup.AddSecurityRequirement(new OpenApiSecurityRequirement
+    // {
+    //     {
+    //         new OpenApiSecurityScheme{
+    //             Reference = new OpenApiReference {
+    //                 Id = "JWT Bearer",
+    //                 Type = ReferenceType.SecurityScheme
+    //             }
+    //         }, new List<string>()
+    //     }
+    // });
+    //    operation.Security.Add(securityRequirements);
 });
 
 builder.Services.AddHealthChecks();
@@ -48,15 +76,15 @@ builder.Logging.AddApplicationInsights(options =>
 // Entity Framework
 builder.Services.AddDbContext<LeaderboardContext>(options =>
 {
-    string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.EnableRetryOnFailure(
-        maxRetryCount: 5,
-        maxRetryDelay: TimeSpan.FromSeconds(30),
-        errorNumbersToAdd: null);
-    });
-    //    options.UseInMemoryDatabase(databaseName: "HighScores");
+    // string connectionString = builder.Configuration.GetConnectionString("LeaderboardContext");
+    // options.UseSqlServer(connectionString, sqlOptions =>
+    // {
+    //     sqlOptions.EnableRetryOnFailure(
+    //     maxRetryCount: 5,
+    //     maxRetryDelay: TimeSpan.FromSeconds(30),
+    //     errorNumbersToAdd: null);
+    // });
+    options.UseInMemoryDatabase(databaseName: "HighScores");
 });
 
 //builder.Services.AddDbContext<LeaderboardContext>(
@@ -132,14 +160,27 @@ group.MapPost("/scores/{nickname}/{game}",
     await context.SaveChangesAsync().ConfigureAwait(false);
     return TypedResults.Ok();
 })
-    //.WithOpenApi(operation => {
-    //    operation.Summary = "Upload potential new high scores";
-    //    operation.Parameters[0].AllowEmptyValue = false;
-    //    operation.OperationId = "PostHighScoreId";
-    //    return operation;
-    //})
-    .WithDescription("Upload potential new high scores")
-    .WithName("PostHighScore")
+    .WithOpenApi(operation => {
+        operation.Summary = "Upload potential new high scores";
+        operation.Parameters[0].AllowEmptyValue = false;
+        operation.OperationId = "PostHighScoreId";
+        var req = new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme{
+                    Reference = new OpenApiReference {
+                        Id = "Bearer",
+                        Type = ReferenceType.SecurityScheme
+                    }
+                }, 
+                new List<string>()
+            }
+        };
+        operation.Security.Add(req);
+        return operation;
+    })
+    //.WithDescription("Upload potential new high scores")
+    //.WithName("PostHighScore")
     .RequireAuthorization()
     .Accepts<int>("application/json", "application/xml"); // Limited support for XML
 
