@@ -92,10 +92,16 @@ builder.Services.AddDbContext<LeaderboardContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Add authentication and authorization
-builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthentication().AddJwtBearer("UserBearer");
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<IdentityUser>()
     .AddEntityFrameworkStores<LeaderboardContext>();
+
+builder.Services.AddAuthorizationBuilder()
+  .AddPolicy("world", policy =>
+        policy
+            .RequireRole("admin")
+);
 
 WebApplication app = builder.Build();
 
@@ -181,7 +187,7 @@ group.MapPost("/scores/{nickname}/{game}",
     })
     //.WithDescription("Upload potential new high scores")
     //.WithName("PostHighScore")
-    .RequireAuthorization()
+    .RequireAuthorization("world")
     .Accepts<int>("application/json", "application/xml"); // Limited support for XML
 
 group.MapGet("/leaderboard", GetScores)
